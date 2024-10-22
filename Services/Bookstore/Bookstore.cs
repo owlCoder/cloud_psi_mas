@@ -1,63 +1,63 @@
 using System.Fabric;
+using Domain.Interfaces;
+using Domain.Models;
 using Microsoft.ServiceFabric.Data.Collections;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 
 namespace Bookstore
 {
-    /// <summary>
-    /// An instance of this class is created for each service replica by the Service Fabric runtime.
-    /// </summary>
-    internal sealed class Bookstore : StatefulService
+    internal sealed class Bookstore : StatefulService, IBookstore
     {
-        public Bookstore(StatefulServiceContext context)
-            : base(context)
-        { }
+        IReliableDictionary<string, Book>? Books;
 
-        /// <summary>
-        /// Optional override to create listeners (e.g., HTTP, Service Remoting, WCF, etc.) for this service replica to handle client or user requests.
-        /// </summary>
-        /// <remarks>
-        /// For more information on service communication, see https://aka.ms/servicefabricservicecommunication
-        /// </remarks>
-        /// <returns>A collection of listeners.</returns>
-        protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
+        public Bookstore(StatefulServiceContext context) : base(context) { }
+
+        public void EnlistPurchase(string book_id, uint count)
         {
-            return new ServiceReplicaListener[0];
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// This is the main entry point for your service replica.
-        /// This method executes when this replica of your service becomes primary and has write status.
-        /// </summary>
-        /// <param name="cancellationToken">Canceled when Service Fabric needs to shut down this service replica.</param>
+        public double GetItemPrice(string book_id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ListAvailableItems()
+        {
+            throw new NotImplementedException();
+        }
+
+        #region TRANSACTIONS METAMODEL
+        public bool Prepare()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Commit()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Rollback()
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+
+        protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners() => this.CreateServiceRemotingReplicaListeners();
+
         protected override async Task RunAsync(CancellationToken cancellationToken)
         {
-            // TODO: Replace the following sample code with your own logic 
-            //       or remove this RunAsync override if it's not needed in your service.
+            Books = await StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("Books");
+            await Books.ClearAsync();
 
-            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, long>>("myDictionary");
-
-            while (true)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                using (var tx = this.StateManager.CreateTransaction())
-                {
-                    var result = await myDictionary.TryGetValueAsync(tx, "Counter");
-
-                    ServiceEventSource.Current.ServiceMessage(this.Context, "Current Counter Value: {0}",
-                        result.HasValue ? result.Value.ToString() : "Value does not exist.");
-
-                    await myDictionary.AddOrUpdateAsync(tx, "Counter", 0, (key, value) => ++value);
-
-                    // If an exception is thrown before calling CommitAsync, the transaction aborts, all changes are 
-                    // discarded, and nothing is saved to the secondary replicas.
-                    await tx.CommitAsync();
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-            }
+            //while (true)
+            //{
+            //    cancellationToken.ThrowIfCancellationRequested();
+            //    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            //}
         }
     }
 }
