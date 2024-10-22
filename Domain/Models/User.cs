@@ -1,20 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Domain.Models
+﻿namespace Domain.Models
 {
-    public class User
+    public class User(string fullname, string email)
     {
-        public required  string UserId { get; set; }
-        public required string Fullname { get; set; }
-        public required string Email { get; set; }
-
-        public User()
-        {
-            UserId = Guid.NewGuid().ToString().Replace("-", "");
-        }
+        public string UserId { get; set; } = Guid.NewGuid().ToString().Replace("-", "");
+        public required string Fullname { get; set; } = fullname;
+        public required string Email { get; set; } = email;
     }
 }
