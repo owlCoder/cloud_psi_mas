@@ -21,7 +21,7 @@ namespace Client.Controllers
             var books = await store.ListAvailableItems();
 
             ViewBag.Clients = clients;
-            return View(books.ToList());
+            return View(books.OrderBy(b => b.Title).ToList());
         }
 
         [HttpPost("buy")]
