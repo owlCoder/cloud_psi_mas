@@ -13,6 +13,7 @@ namespace Client.Controllers
 
         IBank bank = ServiceProxy.Create<IBank>(new Uri("fabric:/CloudSF/Bank"), new ServicePartitionKey(0), TargetReplicaSelector.Default);
         IBookstore store = ServiceProxy.Create<IBookstore>(new Uri("fabric:/CloudSF/Bookstore"), new ServicePartitionKey(0), TargetReplicaSelector.Default);
+        ITranscationCoordinator coordinator = ServiceProxy.Create<ITranscationCoordinator>(new Uri("fabric:/CloudSF/TransactionController"));
 
         public async Task<IActionResult> Index()
         {
@@ -25,7 +26,13 @@ namespace Client.Controllers
         [HttpPost("buy")]
         public async Task<IActionResult> Buy(BuyDto buy)
         {
-            return View();
+            ViewBag.Error = string.Empty;
+            bool ok = await coordinator.BuyBook(buy.UserId, buy.BookId, (uint)buy.Quantity, buy.PricePerPC);
+            
+            if(!ok)
+                ViewBag.Error = "Unable to buy a book!";
+
+            return RedirectToAction("Index");
         }
     }
 }
