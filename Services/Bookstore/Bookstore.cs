@@ -141,18 +141,25 @@ namespace Bookstore
 
         protected override async Task RunAsync(CancellationToken cancellationToken)
         {
-            Books = await StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("Books");
-            await Books.ClearAsync();
-
-            using var trx = StateManager.CreateTransaction();
-
-            for (int i = 1; i <= 10; i++)
+            try
             {
-                Book book = new($"Final Fantasy {i}", "Le Clon En Piere");
-                await Books.TryAddAsync(trx, book.BookId, book);
-            }
+                Books = await StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("Books");
+                await Books.ClearAsync();
 
-            await trx.CommitAsync();
+                using var trx = StateManager.CreateTransaction();
+
+                for (int i = 1; i <= 10; i++)
+                {
+                    Book book = new($"Final Fantasy {i}", "Le Clon En Piere");
+                    await Books.TryAddAsync(trx, book.BookId, book);
+                }
+
+                await trx.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                var ee = ex.Message;
+            }
         }
     }
 }

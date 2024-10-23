@@ -124,16 +124,24 @@ namespace Bank
 
         protected override async Task RunAsync(CancellationToken cancellationToken)
         {
-            Users = await StateManager.GetOrAddAsync<IReliableDictionary<string, User>>("Users");
-            await Users.ClearAsync();
+            try
+            {
+                Users = await StateManager.GetOrAddAsync<IReliableDictionary<string, User>>("Users");
+                await Users.ClearAsync();
 
-            User u1 = new("Danijel Jovanovic", "danijel@uns.ac.rs");
-            User u2 = new("Ana Milic", "ana@uns.ac.rs");
+                User u1 = new("Danijel Jovanovic", "danijel@uns.ac.rs");
+                User u2 = new("Ana Milic", "ana@uns.ac.rs");
 
-            using var trx = StateManager.CreateTransaction();
-            await Users.TryAddAsync(trx, u1.UserId, u1);
-            await Users.TryAddAsync(trx, u2.UserId, u2);
-            await trx.CommitAsync();
+                using var trx = StateManager.CreateTransaction();
+                await Users.TryAddAsync(trx, u1.UserId, u1);
+                await Users.TryAddAsync(trx, u2.UserId, u2);
+                await trx.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                var ee = ex.Message;
+            }
+
         }
     }
 }
