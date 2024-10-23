@@ -9,7 +9,7 @@
         public double Price { get; set; }
         public uint Quantity { get; set; }
 
-        public Book() 
+        public Book()
         {
             BookId = Guid.NewGuid().ToString().Replace("-", "");
             Title = "/";

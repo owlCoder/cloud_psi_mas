@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Client.Models
+﻿namespace Client.Models
 {
     public class BuyDto
     {

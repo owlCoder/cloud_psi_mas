@@ -148,7 +148,7 @@ namespace Bookstore
 
                 using var trx = StateManager.CreateTransaction();
 
-                for (int i = 1; i <= 10; i++)
+                for (int i = 1; i < 10; i++)
                 {
                     Book book = new($"Final Fantasy {i}", "Le Clon En Piere");
                     await Books.TryAddAsync(trx, book.BookId, book);

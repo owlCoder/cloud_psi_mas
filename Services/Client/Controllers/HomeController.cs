@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Client.Models;
 using Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -29,8 +28,8 @@ namespace Client.Controllers
         {
             ViewBag.Error = string.Empty;
             bool ok = await coordinator.BuyBook(buy.UserId, buy.BookId, (uint)buy.Quantity, buy.PricePerPC);
-            
-            if(!ok)
+
+            if (!ok)
                 ViewBag.Error = "Unable to buy a book!";
 
             return RedirectToAction("Index");
