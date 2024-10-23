@@ -12,7 +12,7 @@ namespace Validation
         {
             try
             {
-                if(string.IsNullOrWhiteSpace(user_id) || quantity < 1)
+                if (string.IsNullOrWhiteSpace(user_id) || quantity < 1)
                     return false;
 
                 return true;

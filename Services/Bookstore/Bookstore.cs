@@ -15,7 +15,6 @@ namespace Bookstore
         IReliableDictionary<string, Book>? Books;
         static ConcurrentQueue<ReserveBookDto> BooksQueue = [];
         static ConcurrentQueue<ReserveBookDto> ToCommit = [];
-        //IBank bank = ServiceProxy.Create<IBank>(new Uri("fabric:/CloudSF/Bank"), new ServicePartitionKey(0), TargetReplicaSelector.Default);
 
         public async Task EnlistPurchase(string book_id, uint count)
         {

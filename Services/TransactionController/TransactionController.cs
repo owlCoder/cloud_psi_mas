@@ -1,46 +1,50 @@
 using System.Fabric;
+using Domain.Interfaces;
+using Microsoft.ServiceFabric.Services.Client;
+using Microsoft.ServiceFabric.Services.Communication.Client;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.Client;
+using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 
 namespace TransactionController
 {
-    /// <summary>
-    /// An instance of this class is created for each service instance by the Service Fabric runtime.
-    /// </summary>
-    internal sealed class TransactionController : StatelessService
+    internal sealed class TransactionController(StatelessServiceContext context) : StatelessService(context), ITranscationCoordinator
     {
-        public TransactionController(StatelessServiceContext context)
-            : base(context)
-        { }
+        IBank bank = ServiceProxy.Create<IBank>(new Uri("fabric:/CloudSF/Bank"), new ServicePartitionKey(0), TargetReplicaSelector.Default);
+        IBookstore store = ServiceProxy.Create<IBookstore>(new Uri("fabric:/CloudSF/Bookstore"), new ServicePartitionKey(0), TargetReplicaSelector.Default);
 
-        /// <summary>
-        /// Optional override to create listeners (e.g., TCP, HTTP) for this service replica to handle client or user requests.
-        /// </summary>
-        /// <returns>A collection of listeners.</returns>
-        protected override IEnumerable<ServiceInstanceListener> CreateServiceInstanceListeners()
+        public async Task<bool> BuyBook(string user_id, string book_id, uint quantity, double price_per_one)
         {
-            return new ServiceInstanceListener[0];
-        }
-
-        /// <summary>
-        /// This is the main entry point for your service instance.
-        /// </summary>
-        /// <param name="cancellationToken">Canceled when Service Fabric needs to shut down this service instance.</param>
-        protected override async Task RunAsync(CancellationToken cancellationToken)
-        {
-            // TODO: Replace the following sample code with your own logic 
-            //       or remove this RunAsync override if it's not needed in your service.
-
-            long iterations = 0;
-
-            while (true)
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                await store.EnlistPurchase(book_id, quantity);
+                await bank.EnlistMoneyTransfer(user_id, quantity * price_per_one);
 
-                ServiceEventSource.Current.ServiceMessage(this.Context, "Working-{0}", ++iterations);
+                if (await store.Prepare() && await bank.Prepare())
+                {
+                    if (await store.Commit())
+                    {
+                        if (await bank.Commit())
+                            return true;
 
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                        await store.Rollback();
+                        await bank.Rollback();
+                        return false;
+                    }
+                }
+
+                await store.Rollback();
+                await bank.Rollback();
+
+                return false;
+            }
+            catch
+            {
+                return false;
             }
         }
+
+        protected override IEnumerable<ServiceInstanceListener> CreateServiceInstanceListeners() => this.CreateServiceRemotingInstanceListeners();
     }
 }

@@ -11,15 +11,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{76
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{1C3B38C4-2D13-412C-928C-101E787ECEAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore", "Services\Bookstore\Bookstore.csproj", "{E6984FAC-1300-4518-ADB6-E3022035F70A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bookstore", "Services\Bookstore\Bookstore.csproj", "{E6984FAC-1300-4518-ADB6-E3022035F70A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank", "Services\Bank\Bank.csproj", "{15BF60B1-15DE-4039-820A-82472AED9D64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank", "Services\Bank\Bank.csproj", "{15BF60B1-15DE-4039-820A-82472AED9D64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validation", "Services\Validation\Validation.csproj", "{13541BFC-7236-480D-AEFF-A522A7D1CE78}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Validation", "Services\Validation\Validation.csproj", "{13541BFC-7236-480D-AEFF-A522A7D1CE78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Services\Client\Client.csproj", "{538993FB-9F4C-4A5E-A9FA-3C0EED9419D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "Services\Client\Client.csproj", "{538993FB-9F4C-4A5E-A9FA-3C0EED9419D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionController", "Services\TransactionController\TransactionController.csproj", "{309D86AC-D89E-4A6F-B20F-02C7656093A8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransactionController", "Services\TransactionController\TransactionController.csproj", "{309D86AC-D89E-4A6F-B20F-02C7656093A8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -97,7 +97,7 @@ Global
 		{E6984FAC-1300-4518-ADB6-E3022035F70A} = {769B59F1-C1D6-4EA2-8507-DB5CAE2BDF21}
 		{15BF60B1-15DE-4039-820A-82472AED9D64} = {769B59F1-C1D6-4EA2-8507-DB5CAE2BDF21}
 		{13541BFC-7236-480D-AEFF-A522A7D1CE78} = {769B59F1-C1D6-4EA2-8507-DB5CAE2BDF21}
-		{538993FB-9F4C-4A5E-A9FA-3C0EED9419D5} = {769B59F1-C1D6-4EA2-8507-DB5CAE2BDF21}
+		{538993FB-9F4C-4A5E-A9FA-3C0EED9419D5} = {1C3B38C4-2D13-412C-928C-101E787ECEAA}
 		{309D86AC-D89E-4A6F-B20F-02C7656093A8} = {769B59F1-C1D6-4EA2-8507-DB5CAE2BDF21}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

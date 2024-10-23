@@ -4,7 +4,6 @@ namespace Domain.Interfaces
 {
     public interface ITranscationCoordinator : IService
     {
-        // kupi knjigu
-        // vidi knjige itd
+        Task<bool> BuyBook(string user_id, string book_id, uint quantity, double price_per_one);
     }
 }

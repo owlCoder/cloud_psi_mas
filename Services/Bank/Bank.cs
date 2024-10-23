@@ -1,13 +1,11 @@
 using System.Collections.Concurrent;
 using System.Fabric;
-using Domain.DTO;
 using Domain.Interfaces;
 using Domain.Models;
 using Microsoft.ServiceFabric.Data.Collections;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
-using static System.Reflection.Metadata.BlobBuilder;
 
 namespace Bank
 {
@@ -121,7 +119,7 @@ namespace Bank
         }
         #endregion
 
-        protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners() 
+        protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
             => this.CreateServiceRemotingReplicaListeners();
 
         protected override async Task RunAsync(CancellationToken cancellationToken)
