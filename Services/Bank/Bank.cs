@@ -7,6 +7,7 @@ using Microsoft.ServiceFabric.Data.Collections;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace Bank
 {
@@ -18,7 +19,27 @@ namespace Bank
 
         public async Task<IEnumerable<User>> ListClients()
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (Users is null)
+                    return [];
+
+                List<User> all_users = [];
+
+                using var trx = StateManager.CreateTransaction();
+                var enumerator = (await Users.CreateEnumerableAsync(trx)).GetAsyncEnumerator();
+
+                while (await enumerator.MoveNextAsync(new CancellationToken()))
+                {
+                    all_users.Add(enumerator.Current.Value);
+                }
+
+                return all_users;
+            }
+            catch
+            {
+                return [];
+            }
         }
 
         public async Task EnlistMoneyTransfer(string user_id, double amount)
