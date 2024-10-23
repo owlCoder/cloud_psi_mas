@@ -4,8 +4,8 @@ namespace Domain.Interfaces
 {
     public interface ITransaction : IService
     {
-        bool Prepare();
-        void Commit();
-        void Rollback();
+        Task<bool> Prepare();
+        Task Commit();
+        Task Rollback();
     }
 }

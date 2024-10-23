@@ -14,33 +14,71 @@ namespace Bookstore
 
         public Bookstore(StatefulServiceContext context) : base(context) { }
 
-        public void EnlistPurchase(string book_id, uint count)
+        public async Task EnlistPurchase(string book_id, uint count)
         {
+            // transaction only
             throw new NotImplementedException();
         }
 
-        public double GetItemPrice(string book_id)
+        public async Task<double> GetItemPrice(string book_id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (Books is null)
+                    return 0;
+
+                using var trx = StateManager.CreateTransaction();
+                var book = await Books.TryGetValueAsync(trx, book_id);
+
+                if (book.HasValue)
+                    return book.Value.Price;
+
+                return 0;
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
-        public void ListAvailableItems()
+        public async Task<IEnumerable<Book>> ListAvailableItems()
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (Books is null)
+                    return [];
+
+                List<Book> available_books = [];
+
+                using var trx = StateManager.CreateTransaction();
+                var enumerator = (await Books.CreateEnumerableAsync(trx)).GetAsyncEnumerator();
+
+                while(await enumerator.MoveNextAsync(new CancellationToken()))
+                {
+                    if(enumerator.Current.Value.Quantity > 0)
+                        available_books.Add(enumerator.Current.Value);
+                }
+
+                return available_books;
+            }
+            catch
+            {
+                return [];
+            }
         }
 
         #region TRANSACTIONS METAMODEL
-        public bool Prepare()
+        public async Task<bool> Prepare()
         {
             throw new NotImplementedException();
         }
 
-        public void Commit()
+        public async Task Commit()
         {
             throw new NotImplementedException();
         }
 
-        public void Rollback()
+        public async Task Rollback()
         {
             throw new NotImplementedException();
         }
