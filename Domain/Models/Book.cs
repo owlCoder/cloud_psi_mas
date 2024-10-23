@@ -3,8 +3,8 @@
     public class Book
     {
         public string BookId { get; set; }
-        public required string Title { get; set; }
-        public required string Author { get; set; }
+        public string Title { get; set; }
+        public string Author { get; set; }
         public uint PagesInTotal { get; set; }
         public double Price { get; set; }
         public uint Quantity { get; set; }

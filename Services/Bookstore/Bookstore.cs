@@ -145,11 +145,15 @@ namespace Bookstore
             Books = await StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("Books");
             await Books.ClearAsync();
 
-            //while (true)
-            //{
-            //    cancellationToken.ThrowIfCancellationRequested();
-            //    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-            //}
+            using var trx = StateManager.CreateTransaction();
+
+            for (int i = 1; i <= 10; i++)
+            {
+                Book book = new($"Final Fantasy {i}", "Le Clon En Piere");
+                await Books.TryAddAsync(trx, book.BookId, book);
+            }
+
+            await trx.CommitAsync();
         }
     }
 }
