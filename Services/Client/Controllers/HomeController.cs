@@ -20,7 +20,8 @@ namespace Client.Controllers
             var clients = await bank.ListClients();
             var books = await store.ListAvailableItems();
 
-            return View();
+            ViewBag.Clients = clients;
+            return View(books.ToList());
         }
 
         [HttpPost("buy")]
