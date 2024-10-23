@@ -1,63 +1,118 @@
+using System.Collections.Concurrent;
 using System.Fabric;
+using Domain.DTO;
+using Domain.Interfaces;
+using Domain.Models;
 using Microsoft.ServiceFabric.Data.Collections;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 
 namespace Bank
 {
-    /// <summary>
-    /// An instance of this class is created for each service replica by the Service Fabric runtime.
-    /// </summary>
-    internal sealed class Bank : StatefulService
+    internal sealed class Bank(StatefulServiceContext context) : StatefulService(context), IBank
     {
-        public Bank(StatefulServiceContext context)
-            : base(context)
-        { }
+        IReliableDictionary<string, User>? Users;
+        ConcurrentQueue<User> UsersQueue = [];
+        ConcurrentQueue<User> ToCommit = [];
 
-        /// <summary>
-        /// Optional override to create listeners (e.g., HTTP, Service Remoting, WCF, etc.) for this service replica to handle client or user requests.
-        /// </summary>
-        /// <remarks>
-        /// For more information on service communication, see https://aka.ms/servicefabricservicecommunication
-        /// </remarks>
-        /// <returns>A collection of listeners.</returns>
-        protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
+        public async Task<IEnumerable<User>> ListClients()
         {
-            return new ServiceReplicaListener[0];
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// This is the main entry point for your service replica.
-        /// This method executes when this replica of your service becomes primary and has write status.
-        /// </summary>
-        /// <param name="cancellationToken">Canceled when Service Fabric needs to shut down this service replica.</param>
-        protected override async Task RunAsync(CancellationToken cancellationToken)
+        public async Task EnlistMoneyTransfer(string user_id, double amount)
         {
-            // TODO: Replace the following sample code with your own logic 
-            //       or remove this RunAsync override if it's not needed in your service.
-
-            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, long>>("myDictionary");
-
-            while (true)
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                if (Users is null)
+                    return;
 
-                using (var tx = this.StateManager.CreateTransaction())
+                using var trx = StateManager.CreateTransaction();
+                var user = await Users.TryGetValueAsync(trx, user_id);
+
+                if (!user.HasValue)
+                    return;
+
+                if (user.Value.Balance < amount)
+                    return;
+
+                var new_user = new User("", "");
+                new_user.Balance = amount;
+                new_user.UserId = user_id;
+
+                UsersQueue.Enqueue(new_user);
+            }
+            catch { }
+        }
+
+        #region TRANSACTIONS METAMODEL
+        public async Task<bool> Prepare()
+        {
+            try
+            {
+                using var trx = StateManager.CreateTransaction();
+                bool ok = UsersQueue.TryDequeue(out var dequeued_users);
+
+                if (!ok || dequeued_users is null)
                 {
-                    var result = await myDictionary.TryGetValueAsync(tx, "Counter");
-
-                    ServiceEventSource.Current.ServiceMessage(this.Context, "Current Counter Value: {0}",
-                        result.HasValue ? result.Value.ToString() : "Value does not exist.");
-
-                    await myDictionary.AddOrUpdateAsync(tx, "Counter", 0, (key, value) => ++value);
-
-                    // If an exception is thrown before calling CommitAsync, the transaction aborts, all changes are 
-                    // discarded, and nothing is saved to the secondary replicas.
-                    await tx.CommitAsync();
+                    return false;
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                ToCommit.Enqueue(dequeued_users);
+                await Task.Delay(0);
+                return true;
             }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> Commit()
+        {
+            bool ok = ToCommit.TryDequeue(out var dequeued_user);
+
+            if (!ok || dequeued_user is null || Users is null)
+                return false;
+
+            using var trx = StateManager.CreateTransaction();
+            var user = await Users.TryGetValueAsync(trx, dequeued_user.UserId);
+
+            if (user.HasValue)
+            {
+                user.Value.Balance -= dequeued_user.Balance; // update user balance
+
+                await Users.SetAsync(trx, dequeued_user.UserId, user.Value);
+                await trx.CommitAsync();
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task Rollback()
+        {
+            ToCommit.TryDequeue(out _);
+            await Task.Delay(0);
+        }
+        #endregion
+
+        protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners() 
+            => this.CreateServiceRemotingReplicaListeners();
+
+        protected override async Task RunAsync(CancellationToken cancellationToken)
+        {
+            Users = await StateManager.GetOrAddAsync<IReliableDictionary<string, User>>("Users");
+            await Users.ClearAsync();
+
+            User u1 = new("Danijel Jovanovic", "danijel@uns.ac.rs");
+            User u2 = new("Ana Milic", "ana@uns.ac.rs");
+
+            using var trx = StateManager.CreateTransaction();
+            await Users.TryAddAsync(trx, u1.UserId, u1);
+            await Users.TryAddAsync(trx, u2.UserId, u2);
+            await trx.CommitAsync();
         }
     }
 }

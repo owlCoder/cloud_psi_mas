@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Fabric;
+using Domain.DTO;
 using Domain.Interfaces;
 using Domain.Models;
 using Microsoft.ServiceFabric.Data.Collections;
@@ -8,16 +10,33 @@ using Microsoft.ServiceFabric.Services.Runtime;
 
 namespace Bookstore
 {
-    internal sealed class Bookstore : StatefulService, IBookstore
+    internal sealed class Bookstore(StatefulServiceContext context) : StatefulService(context), IBookstore
     {
         IReliableDictionary<string, Book>? Books;
-
-        public Bookstore(StatefulServiceContext context) : base(context) { }
+        static ConcurrentQueue<ReserveBookDto> BooksQueue = [];
+        static ConcurrentQueue<ReserveBookDto> ToCommit = [];
+        //IBank bank = ServiceProxy.Create<IBank>(new Uri("fabric:/CloudSF/Bank"), new ServicePartitionKey(0), TargetReplicaSelector.Default);
 
         public async Task EnlistPurchase(string book_id, uint count)
         {
-            // transaction only
-            throw new NotImplementedException();
+            try
+            {
+                if (Books is null)
+                    return;
+
+                using var trx = StateManager.CreateTransaction();
+                var book = await Books.TryGetValueAsync(trx, book_id);
+
+                if (!book.HasValue)
+                    return;
+
+                if (book.Value.Quantity < count)
+                    return;
+
+                var reserved = new ReserveBookDto(book.Value.BookId, count);
+                BooksQueue.Enqueue(reserved);
+            }
+            catch { }
         }
 
         public async Task<double> GetItemPrice(string book_id)
@@ -53,9 +72,9 @@ namespace Bookstore
                 using var trx = StateManager.CreateTransaction();
                 var enumerator = (await Books.CreateEnumerableAsync(trx)).GetAsyncEnumerator();
 
-                while(await enumerator.MoveNextAsync(new CancellationToken()))
+                while (await enumerator.MoveNextAsync(new CancellationToken()))
                 {
-                    if(enumerator.Current.Value.Quantity > 0)
+                    if (enumerator.Current.Value.Quantity > 0)
                         available_books.Add(enumerator.Current.Value);
                 }
 
@@ -70,17 +89,52 @@ namespace Bookstore
         #region TRANSACTIONS METAMODEL
         public async Task<bool> Prepare()
         {
-            throw new NotImplementedException();
+            try
+            {
+                using var trx = StateManager.CreateTransaction();
+                bool ok = BooksQueue.TryDequeue(out var dequeued_book);
+
+                if (!ok || dequeued_book is null)
+                {
+                    return false;
+                }
+
+                ToCommit.Enqueue(dequeued_book);
+                await Task.Delay(0);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public async Task Commit()
+        public async Task<bool> Commit()
         {
-            throw new NotImplementedException();
+            bool ok = ToCommit.TryDequeue(out var dequeued_book);
+
+            if (!ok || dequeued_book is null || Books is null)
+                return false;
+
+            using var trx = StateManager.CreateTransaction();
+            var book = await Books.TryGetValueAsync(trx, dequeued_book.BookId);
+
+            if (book.HasValue)
+            {
+                book.Value.Quantity -= dequeued_book.RequestedCount; // update bought count
+
+                await Books.SetAsync(trx, dequeued_book.BookId, book.Value);
+                await trx.CommitAsync();
+                return true;
+            }
+
+            return false;
         }
 
         public async Task Rollback()
         {
-            throw new NotImplementedException();
+            await Task.Delay(0);
+            ToCommit.TryDequeue(out _);
         }
         #endregion
 
