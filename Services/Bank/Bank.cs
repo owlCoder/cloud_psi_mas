@@ -58,9 +58,11 @@ namespace Bank
                 if (user.Value.Balance < amount)
                     return;
 
-                var new_user = new User("", "");
-                new_user.Balance = amount;
-                new_user.UserId = user_id;
+                var new_user = new User("", "")
+                {
+                    Balance = amount,
+                    UserId = user_id
+                };
 
                 UsersQueue.Enqueue(new_user);
             }
